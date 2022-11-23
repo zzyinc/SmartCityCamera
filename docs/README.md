@@ -63,7 +63,7 @@ Demo 包的内容如下，使用时需放在 7G 盒子中的 `/userdata/` 目录
 
 以闸口戴口罩检测为例，Demo 结果如下图所示：
 
-TODO
+![image](./images/face_mask_detect.jpg)
 
 ### 车牌检测&识别
 
@@ -75,7 +75,8 @@ TODO
 
 以十字路口灯杆拍摄场景为例，Demo 结果如下图所示：
 
-TODO 
+![image](./images/street_plate_ocr.jpg)
+
 
 ## 快速验证
 
