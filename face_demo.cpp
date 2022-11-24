@@ -167,9 +167,9 @@ int main(int argc, char **argv) {
                         score_str,
                         cv::Point(result.face.bbox[0], result.face.bbox[1]),
                         cv::FONT_HERSHEY_SIMPLEX,
-                        0.5, /* font scale */
-                        cv::Scalar(0, 0, 255), /* font color */
-                        1.5 /* font thickness */);
+                        1.0, /* font scale */
+                        cv::Scalar(20, 20, 255), /* font color */
+                        2.0 /* font thickness */);
 
                 printf(
                         "\t%s (sim: %.4f)",
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
                         cv::Point(result.face.bbox[0], result.face.bbox[1]),
                         cv::FONT_HERSHEY_SIMPLEX,
                         0.5, /* font scale */
-                        cv::Scalar(0, 0, 255), /* font color */
+                        cv::Scalar(30, 30, 180), /* font color */
                         1.5 /* font thickness */);
 
                 printf("\tUnknown user");
