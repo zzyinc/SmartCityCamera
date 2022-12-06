@@ -194,7 +194,7 @@ float FaceResult::similarity(const FaceResult& other);
 
 ```
 
-用于比对两个 `FaceResult` 的人脸相似度。
+用于比对两个 `FaceResult` 的人脸的余弦相似度，该方法会将 cosine 值映射到一个百分制的分数区间中。
 
 ### SDK 参数设定
 
@@ -225,6 +225,8 @@ track_param.need_track_model = false;
 #define FRS_ROLL_THRESHOLD 15
 
 ```
+
+对于门禁等，比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的余弦相似度，我们建议将相似度阈值设为 84 分，即超过 84 分的刷脸行为认为是本人，允许放行。
 
 * 防疫闸口
 
@@ -273,4 +275,7 @@ track_param.landmark_for_masked_face = true;
 #define FRS_YAW_THRESHOLD 30
 #define FRS_ROLL_THRESHOLD 15
 ```
+
+若比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的余弦相似度，我们建议将相似度阈值设为 84 分；若底库为闸口的摄像头采集的非正常条件下的照片（含光照条件差、戴口罩人脸等），我们建议将相似度阈值设为 77。
+
 

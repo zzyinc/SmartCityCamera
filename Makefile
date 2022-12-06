@@ -5,7 +5,8 @@ GCC := aarch64-linux-gnu-gcc-8
 GXX := aarch64-linux-gnu-g++-8
 
 CXXFLAGS := \
-		  	-DLINUX \
+		  	-O2 \
+		 	-DLINUX \
 			-I./ \
 			-I./include/facerecogsdk \
 			-I./3rdparty/include \

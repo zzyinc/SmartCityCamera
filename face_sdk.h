@@ -19,7 +19,112 @@
 #define FRS_PITCH_THRESHOLD 40
 #define FRS_YAW_THRESHOLD 40
 #define FRS_ROLL_THRESHOLD 30
+// 人脸相似度阈值
+#define FRS_SCORE_THRESHOLD 77
 
+static float COS_TO_SCORE[] = {
+    0.000000,
+    0.013366,
+    0.016732,
+    0.020099,
+    0.023465,
+    0.026831,
+    0.030197,
+    0.033563,
+    0.036930,
+    0.040296,
+    0.043662,
+    0.047028,
+    0.050394,
+    0.053761,
+    0.057127,
+    0.060493,
+    0.063859,
+    0.067225,
+    0.070592,
+    0.073958,
+    0.077324,
+    0.080690,
+    0.084056,
+    0.087423,
+    0.090789,
+    0.094155,
+    0.097521,
+    0.100887,
+    0.104254,
+    0.107620,
+    0.110986,
+    0.114352,
+    0.117718,
+    0.121085,
+    0.124451,
+    0.127817,
+    0.131183,
+    0.134549,
+    0.137915,
+    0.141282,
+    0.144648,
+    0.148014,
+    0.151380,
+    0.154746,
+    0.158113,
+    0.161479,
+    0.164845,
+    0.168211,
+    0.171577,
+    0.174944,
+    0.178310,
+    0.181676,
+    0.185042,
+    0.188408,
+    0.191775,
+    0.195141,
+    0.198507,
+    0.201873,
+    0.205239,
+    0.208606,
+    0.211972,
+    0.215338,
+    0.218704,
+    0.222070,
+    0.225437,
+    0.228803,
+    0.232169,
+    0.235535,
+    0.238901,
+    0.242268,
+    0.245634,
+    0.249000,
+    0.257750,
+    0.266500,
+    0.275250,
+    0.284000,
+    0.292750,
+    0.301500,
+    0.310250,
+    0.319000,
+    0.328000,
+    0.337000,
+    0.346000,
+    0.355000,
+    0.364000,
+    0.373000,
+    0.399600,
+    0.426200,
+    0.452800,
+    0.479400,
+    0.506000,
+    0.517800,
+    0.529600,
+    0.541400,
+    0.553200,
+    0.565000,
+    0.600000,
+    0.635000,
+    0.670000,
+    0.705000,
+    0.715000,
+};
 
 struct FaceResult {
     facerecogsdk::FaceStatus face;
@@ -59,35 +164,33 @@ struct FaceResult {
     }
 
     /*
-     * 计算人脸相似度
+     * 计算人脸余弦相似度
      *
      * @param [other] - SDK 返回的人脸检测结果
      *
      * @return - float 表示相似度分数，分数越高表示越相似
      */
-    float similarity(const FaceResult& other) {
+    int similarity(const FaceResult& other) {
         float distance = 0;
         for (int i = 0; i < FRS_FEATURE_LENGTH; i += 4) {
-            float tmp_value0 = this->feature[i] - other.feature[i];
-            float tmp_value1 = this->feature[i+1] - other.feature[i+1];
-            float tmp_value2 = this->feature[i+2] - other.feature[i+2];
-            float tmp_value3 = this->feature[i+3] - other.feature[i+3];
+            float tmp_value0 = this->feature[i] * other.feature[i];
+            float tmp_value1 = this->feature[i+1] * other.feature[i+1];
+            float tmp_value2 = this->feature[i+2] * other.feature[i+2];
+            float tmp_value3 = this->feature[i+3] * other.feature[i+3];
 
-            distance += tmp_value0 * tmp_value0 
-                    + tmp_value1 * tmp_value1
-                    + tmp_value2 * tmp_value2
-                    + tmp_value3 * tmp_value3;
+            distance += tmp_value0
+                    + tmp_value1
+                    + tmp_value2
+                    + tmp_value3;
         }
 
-        if (distance < 0.9) {
-            distance = 1.0;
-        } else if (distance < 1.9) {
-            distance = 1.9 - distance;
-        } else {
-            distance = 0.0;
+        for (int i = 100; i > 0; i--) {
+            if (distance >= COS_TO_SCORE[i]) {
+                return i;
+            }
         }
 
-        return distance;
+        return 0;
     }
 
 };

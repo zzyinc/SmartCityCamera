@@ -59,9 +59,9 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        if (face_results.size() != 1) {
+        if (face_results.size() < 1) {
             printf(
-                    "More than one face. [file_name='%s' face_num=%zu]\n",
+                    "No face. [file_name='%s' face_num=%zu]\n",
                     file_name,
                     face_results.size());
             continue;
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 
             char score_str[64];
 
-            if (sim_in_lib > 0.7) {
+            if (sim_in_lib >= FRS_SCORE_THRESHOLD) {
                 snprintf(
                         score_str, 
                         64, 

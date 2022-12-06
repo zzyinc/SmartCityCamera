@@ -92,16 +92,15 @@ int FaceSDK::getFaceFeature(
     facerecogsdk::FaceDetectParam track_param;
     track_param.min_face_size = 10;
     track_param.max_face_size = 9999;
-    track_param.face_mask_mode = true;
-    track_param.bigger_face_mode = false;
     track_param.need_track_model = false;
     track_param.detect_interval = 5;
     track_param.landmark_for_masked_face = true;
+    track_param.face_mask_mode = true;
     track_param.multi_landmark_mode = true;
     track_param.need_pose_estimate = true;
     if (bigger_face_mode) {
         track_param.bigger_face_mode = true; 
-        track_param.cls_threshold = 0.8;
+        track_param.cls_threshold = 0.5;
     } else {
         track_param.bigger_face_mode = false; 
         track_param.cls_threshold = 0.5;
