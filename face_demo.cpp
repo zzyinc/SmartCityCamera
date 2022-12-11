@@ -118,6 +118,7 @@ int main(int argc, char **argv) {
 
     printf("Scan image dir... [file_num=%zu]\n", image_names.size());
 
+    int recall_file = 0;
     int recall = 0;
     int precision = 0;
 
@@ -238,6 +239,7 @@ int main(int argc, char **argv) {
 
                     // 判断一下文件名，统计召回的准确率
                     recall_in_file = true;
+                    recall += 1;
                     if (get_uid_from_fn(sim_user) == get_uid_from_fn(cmp_name)) {
                         precision += 1;
                     }
@@ -283,13 +285,13 @@ int main(int argc, char **argv) {
         cv::imwrite(file_name, frame);
 
         if (recall_in_file) {
-            recall += 1;
+            recall_file += 1;
         }
     }
 
     printf(
-            "Recall: %.2f% Precision: %.2f\n%",
-            float(recall) / image_names.size() * 100,
+            "Recall: %.2f% Precision: %.2f%\n",
+            float(recall_file) / image_names.size() * 100,
             float(precision) / recall * 100);
 
     return 0;
