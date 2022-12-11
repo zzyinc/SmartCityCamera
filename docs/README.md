@@ -1,6 +1,6 @@
 # 人脸识别&车牌识别 SDK 简介
 
-本文说明 人脸&车牌 SDK 和 DEMO 的使用。
+本文说明 人脸&车牌 SDK 的使用。
 
 ## 功能简介
 
@@ -129,72 +129,138 @@ Demo 包的内容如下，使用时需放在 7G 盒子中的 `/userdata/` 目录
 /*
  * @params [license_path] - 传入离线 License 文件地址
  */
-explicit FaceSDK(const std::string& license_path);
+explicit FaceSDK(const char* license_path);
 ```
 
-* 人脸检测及特征计算
+* 传入待检测图片
+
+为减少 SDK 内部的内存拷贝次数，人俩检测、人脸特征计算 的 API 调用时需按照特定顺序。首先调用 `loadRawImage` 或 `loadEncodedImage` 方法，向 SDK 传入图片；然后使用 `getAllFaces` 方法，获取图片中的所有人脸；再根据该方法的返回值中的人脸质量 `FaceDetectResult::quality`，调用 `getFaceFeature` 方法获取人脸特征值，或调用 `getFaceImage` 方法获取人脸区域图片。
+
+在再次调用 `loadRawImage` 或 `loadEncodedImage` 前，可以重复调用 `getAllFaces`、`getFaceFeature` 或 `getFaceImage` 方法获取人脸及相关信息。
+
+对于 `loadRawImage` 方法，需要注意的是，输入的图片为 **BGR** 格式，即 `OpenCV::imread` 或 `OpenCV::imdecode` 打开图片的默认格式。该方法通过 `face_num` 参数返回图片中的人脸数量。
 
 ```
 /*
- * @params [frame] - OpenCV 的图片矩阵。输入图片长宽若非4的整数倍时，需花费额外时间进行填充操作
+ * 载入图片 
+ *
+ * @params [bgr_data] - 输入 8bit 位图，色彩模式为 BGR，通道顺序为 HWC 
+ * @params [image_width] - 输入图片的 Width
+ * @params [image_height] - 输入图片的 Height
  * @params [bigger_face_mode] - True 表示输入为大头照，用于底库建库；False 表示输入为普通照片
- * @params [roi_bbox] - int[4]，分别为 ROI 的左上角、右下角 <x, y>，传入 NULL 表示对全图进行识别
- * @params [face_result] - 返回人脸检测及特征结果
+ * @params face_num - 图片中人脸的数目
  *
  * @return - 0 表示正常返回，其余为错误
  */
-int getFaceFeature(
-        const cv::Mat& frame,
+int loadRawImage( 
+        const unsigned char* bgr_data,
+        size_t image_width,
+        size_t image_height,
         bool bigger_face_mode,
-        const int roi_bbox[],
-        std::vector<FaceResult>* face_result);
+        int* face_num);
 
 /*
- * @params [file_path] - 图片文件地址，支持 jpg/png 格式。输入图片长宽若非4的整数倍时，需花费额外时间进行填充操作
+ * 载入图片 
+ *
+ * @params [jpg_data] - 输入 JPG/PNG 格式的图片
+ * @params [jpg_size] - 输入图片的长度
  * @params [bigger_face_mode] - True 表示输入为大头照，用于底库建库；False 表示输入为普通照片
- * @params [roi_bbox] - int[4]，分别为 ROI 的左上角、右下角 <x, y>，传入 NULL 表示对全图进行识别
- * @params [frame] - 返回读入的图片
- * @params [face_result] - 返回人脸检测及特征结果
+ * @params face_num - 图片中人脸的数目
  *
  * @return - 0 表示正常返回，其余为错误
  */
-int FaceSDK::getFaceFeatureFile(
-        const std::string& file_path,
+int loadEncodedImage( 
+        const unsigned char* jpg_data,
+        size_t jpg_size,
         bool bigger_face_mode,
-        const int roi_bbox[],
-        cv::Mat* frame,
-        std::vector<FaceResult>* face_result);
-
+        int* face_num);
 ```
 
-人脸检测及识别功能的返回结果由 `class FaceResult` 表示，人脸检测接口返回 `std::vector<FaceResult>`，其中每个 `FaceResult` 包含两个成员变量 `struct FaceStatus face` 及 `float feature[]`。`face` 包含以下信息:
+* 获取人脸检测结果
+
+人脸检测及识别功能的返回结果由 `struct FaceDetectResult` 表示，包含以下信息:
 
 ```
-struct FaceStatus {
-    float score;        // 人脸的置信度
-    int bbox[4];        // 人脸左上角和右下角坐标
-    int face_width;
-    int face_height;    // 人脸的宽度和高度
-    int face_mask;      // 当开启口罩检测时，0 表示佩戴口罩，1 表示未佩戴口罩；-1 表示未检测
-    int pitch;          // 人脸绕 x 轴角度
-    int yaw;            // 人脸绕 y 轴角度
-    int roll;           // 人脸绕 z 轴角度
+// 人脸检测返回值
+struct FaceDetectResult {
+    int bbox[4];        // 人脸的 BBox，[0,1] 为左上角，[2,3] 为右下角
+    int face_mask;      // 佩戴口罩的标记，0-佩戴口罩，1-未佩戴口罩
+    int quality;        // 人脸质量打分
 };
 ```
 
-`feature` 为长度为 `512` 的 float 数组，为人脸特征向量。`FaceResult` 对象有一个成员方法:
+SDK 用户根据 `loadRawImage` 或 `loadEncodedImage` 方法中的返回参数 `face_num`，获得人脸数量后，需要创建对应长度的 `FaceDetectResult` 数组，该数组的内存由 SDK 用户在外部自行负责创建或释放。
+
+用户可通过 `getAllFaces` 方法，获得检测的所有人脸。
 
 ```
 /*
- * @param [other] - SDK 返回的人脸检测结果
+ * 获取载入图片的人脸检测结果
  *
- * @return - float 表示相似度分数，分数越高表示越相似
- */
-float FaceResult::similarity(const FaceResult& other);
-
+ * @params [face_detects] - 人脸检测结果 FaceDetectResult 数组，空间由外部分
+ *                          配，其长度至少应 到 load_image 时返回的 face_num 
+ *                          人脸数量
+ *
+ * @return - >=0 表示正常返回，且返回值为人脸的数目；<0 为错误
+ **/
+int getAllFaces(
+        FaceDetectResult* face_detects);
 ```
 
-用于比对两个 `FaceResult` 的人脸的余弦相似度，该方法会将 cosine 值映射到一个百分制的分数区间中。
+* 人脸特征
+
+用户可以根据 `FaceDetectResult` 结构中的 `quality` 筛选符合质量要求的人脸进行特征提取，人脸质量阈值的建议在后文中描述。
+
+用户使用 `getFaceFeature` 获取人脸特征向量。参数 `face_feature` 为长度为 `512` 的 float 数组，该数组的空间需由用户在自行申请或释放。
+
+```
+/*
+ * 获取人脸的特征值
+ *
+ * @params [face_idx] - 人脸检测结果中对应的人脸序号 
+ * @params [face_feature] - 人脸特征值数组，长度为 FRS_FEATURE_LENGTH 的 float
+ *                          数组，空间由外部分配
+ *
+ * @return - 0 表示正常返回，其余为错误
+ **/
+int getFaceFeature(
+        int face_idx,
+        float* face_feature);
+```
+
+用户使用 `faceSimilarity` 方法比对两个人脸的相似度，返回值映射到一个百分制的分数区间中。
+
+```
+/*
+ * 获取人脸相似度打分
+ *
+ * @params [face_feature0] - 人脸特征值数组，长度为 FRS_FEATURE_LENGTH 
+ * @params [face_feature1] - 人脸特征值数组，长度为 FRS_FEATURE_LENGTH 
+ * 
+ * @return - 相似度分值，0~100 分
+ */
+int faceSimilarity(
+    const float* face_feature0,
+    const float* face_feature1);
+```
+
+* 人脸区域图片
+
+用户可调用 `getFaceImage` 获得人脸区域图片。
+
+```
+/*
+ * 获取经过对齐的人脸图片
+ *
+ * @params [face_idx] - 人脸检测结果中对应的人脸序号 
+ * @params [face_aligned] - 经过对齐的人脸图片
+ *
+ * @return - 0 表示正常返回，其余为错误
+ **/
+int getFaceImage(
+        int face_idx,
+        cv::Mat* face_aligned);
+```
 
 ### SDK 参数设定
 
@@ -204,78 +270,30 @@ float FaceResult::similarity(const FaceResult& other);
 
 我们建议输入的图片或检索 ROI 的像素不低于 `320x320`。
 
-我们建议 `FaceSDK` 初始化时的 `FaceDetectParam` （除默认值外）设为：
+在底库建库时，我们建议根据实际情况，将 `FaceSDK` 初始化时的 `FaceDetectParam` （除默认值外）设为：
 
 ```
-facerecogsdk::FaceDetectParam track_param;
-track_param.face_mask_mode = false;
-track_param.bigger_face_mode = true;
-track_param.need_track_model = false;
-
+track_param.face_mask_mode = false;     // false - 无需口罩检测，true - 需口罩检测 
+track_param.bigger_face_mode = true;    // false - 检测所有人脸，true - 检测最大的人脸
 ```
 
-对返回的人脸过滤条件设置为
+在门禁图片比对时，我们建议根据实际情况，将 `FaceSDK` 初始化时的 `FaceDetectParam` （除默认值外）设为：
 
 ```
-// 检测结果中的最小人脸（长/宽像素），可修改
-#define FRS_MIN_FACE_SIZE 64
-// Pitch / Yaw/ Roll 检测阈值，可修改
-#define FRS_PITCH_THRESHOLD 20
-#define FRS_YAW_THRESHOLD 30
-#define FRS_ROLL_THRESHOLD 15
-
+track_param.face_mask_mode = false;     // false - 无需口罩检测，true - 需口罩检测 
+track_param.bigger_face_mode = false;   // false - 检测所有人脸，true - 检测最大的人脸
 ```
 
-对于门禁等，比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的余弦相似度，我们建议将相似度阈值设为 84 分，即超过 84 分的刷脸行为认为是本人，允许放行。
+门禁场景中，建议将人脸质量分数的阈值设为 80 分，即 `face_demo.cpp` 中的 `FACE_QUALITY_THRESHOLD` 设为 80。
+
+门禁场景中，比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的相似度，我们建议将相似度阈值设为 89 分，即超过 89 分的刷脸行为认为是本人，允许放行，即 `face_demo.cpp` 中的 `FACE_RECOG_SCORE_THRESHOLD` 设为 89。
 
 * 防疫闸口
 
 对于检测人流是否佩戴口罩的场景，我们建议输入的图片或检索 ROI 的像素不低于 `640x640`。
 
-`FaceSDK` 初始化时的 `FaceDetectParam` 设为：
+`FaceSDK` 初始化时参数与人脸门禁机相同。
 
-```
-facerecogsdk::FaceDetectParam track_param;
-track_param.face_mask_mode = true;
-track_param.bigger_face_mode = false;
-track_param.need_track_model = false;
-track_param.landmark_for_masked_face = false;
-
-```
-
-对返回的人脸过滤条件设置为
-
-```
-// 检测结果中的最小人脸（长/宽像素），可修改
-#define FRS_MIN_FACE_SIZE 16
-// Pitch / Yaw/ Roll 检测阈值，可修改
-#define FRS_PITCH_THRESHOLD 40
-#define FRS_YAW_THRESHOLD 40
-#define FRS_ROLL_THRESHOLD 30
-```
-
-对于用户重识别（Re-ID）的场景，我们建议输入的图片或检索 ROI 的像素不低于 `640x640`。
-
-```
-facerecogsdk::FaceDetectParam track_param;
-track_param.face_mask_mode = true;
-track_param.bigger_face_mode = false;
-track_param.need_track_model = false;
-track_param.landmark_for_masked_face = true;
-
-```
-
-对返回的人脸过滤条件设置为
-
-```
-// 检测结果中的最小人脸（长/宽像素），可修改
-#define FRS_MIN_FACE_SIZE 64
-// Pitch / Yaw/ Roll 检测阈值，可修改
-#define FRS_PITCH_THRESHOLD 30
-#define FRS_YAW_THRESHOLD 30
-#define FRS_ROLL_THRESHOLD 15
-```
-
-若比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的余弦相似度，我们建议将相似度阈值设为 84 分；若底库为闸口的摄像头采集的非正常条件下的照片（含光照条件差、戴口罩人脸等），我们建议将相似度阈值设为 77。
+因防疫闸口的拍摄角度、光照等问题，我们建议将人脸质量分数的阈值设为 70 分。若比对底库是由正常条件下的人脸身份信息构造的人脸识别场景（含 1:1 和 1:N），对于人脸识别的余弦相似度，我们建议将相似度阈值设为 89 分；若底库为闸口的摄像头采集的非正常条件下的照片（含光照条件差、戴口罩人脸等），我们建议将相似度阈值设为 87。
 
 

@@ -15,7 +15,7 @@ namespace facerecogsdk
         int bbox[4];  // (x1, y1, x2, y2)
         int face_width;
         int face_height;
-        int face_mask = -1;  // 是否佩戴口罩，-1: 未检测，0: 未佩戴，1: 佩戴口罩
+        int face_mask = -1;  // 是否佩戴口罩，-1: 未检测，0: 佩戴口罩，1: 未佩戴口罩
         float xy5Points[10];
         float landmarks[LANDMARK_NUM * 2];
         int traceId = -1;  // 追踪到人脸的 trace id，从1开始, 也表示不同人脸的总数, detect 模式下，为 -1;
@@ -40,7 +40,6 @@ namespace facerecogsdk
         int detect_interval = 5;        // 追踪间隔（帧）
 
         // face align(landmark)
-        bool landmark_for_masked_face = false;  // 是否为戴口罩的用户进行关键点检测
         bool multi_landmark_mode = true;        // 是否进行 106 点关键点检测
         bool need_pose_estimate = true;         // 是否进行姿态估计
     };
