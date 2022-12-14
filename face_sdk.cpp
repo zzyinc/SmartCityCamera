@@ -218,6 +218,7 @@ int FaceSDK::getAllFaces(
         FaceDetectResult* face = face_detects + i;
         memcpy(face->bbox, face_status.bbox, sizeof(face_status.bbox)); // int * 4
         face->face_mask = face_status.face_mask;
+        face->score = face_status.score;
         face->quality = calcFaceQuality_(face_status);
     }
 

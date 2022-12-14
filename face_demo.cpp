@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
     }
 
     printf(
-            "Recall: %.2f% Precision: %.2f%\n",
+            "Recall: %.2f Precision: %.2f\n",
             float(recall_file) / image_names.size() * 100,
             float(precision) / recall * 100);
 

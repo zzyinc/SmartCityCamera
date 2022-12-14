@@ -24,7 +24,8 @@
 struct FaceDetectResult {
     int bbox[4];        // 人脸的 BBox，[0,1] 为左上角，[2,3] 为右下角
     int face_mask;      // 佩戴口罩的标记，0-佩戴口罩，1-未佩戴口罩
-    int quality;        // 人脸质量打分
+    int quality;        // 人脸质量综合打分（检测置信度、人脸像素、人脸角度），百分制
+    float score;        // 人脸检测置信度
 };
 
 /*
